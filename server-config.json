@@ -1,0 +1,9 @@
+{
+	"uploadsPath" : "/uploads/",
+    "port" : 8888,
+    "mimeTypeWhitelist" : [
+    	"image/png", 
+    	"application/zip", 
+    	"application/octet-stream"
+	]
+}

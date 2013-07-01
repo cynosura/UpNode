@@ -14,12 +14,13 @@ var http = require('http')
   , fs = require('fs')
   , moreFs = require( './lib/fs' )
   , mime = require('mime')
-  , Formidable = require('formidable');
+  , Formidable = require('formidable')
+  , config = require('./server-config.json');
 
 // Configuration options
-var uploadsPath = __dirname + '/uploads/'
-  , port = process.argv[2] || 8888
-  , mimeTypeWhitelist = ['image/png', 'application/zip', 'application/octet-stream']; 
+var uploadsPath = __dirname + config.uploadsPath
+  , port = process.argv[2] || config.port
+  , mimeTypeWhitelist = config.mimeTypeWhitelist; 
 
 // server setup
 http.createServer(function(req, res) {
@@ -157,6 +158,7 @@ http.createServer(function(req, res) {
             // Check file for allowed/whitelisted files
             var mimeType = mime.lookup(file.name);
             if (typeof(mimeTypeWhitelist) !== 'undefined' && mimeTypeWhitelist.length > 0) {
+               
                // actually use the whitelist
                if(mimeTypeWhitelist.indexOf(mimeType) == -1) {
                   // error, the file's mime is not white listed
@@ -169,6 +171,7 @@ http.createServer(function(req, res) {
             var fileInfo = {
                name: file.name,
                size: file.size,
+               pathname: file.
                lastModifiedDate: file.lastModifiedDate,
                mimeType: mimeType
             };
@@ -190,6 +193,7 @@ http.createServer(function(req, res) {
             res.end(JSON.stringify(json));
 
             process.stdout.write('\r\033[2K' + 'Uploading: [DONE]\n');
+
          });
       form.parse(req);
    }
