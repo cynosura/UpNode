@@ -98,6 +98,20 @@ http.createServer(function(req, res) {
    function saveFile(req, res) {
       res.writeHead(200, {'Content-Type': 'application/json'});
 
+      // map url to path
+      var url = require('url').parse( req.url, false )
+        , pathname = path.join( '/', url.pathname )
+        , dirname;
+        
+      // if the path ends with '/', treat url as directory location
+      if( pathname.lastIndexOf( path.sep ) === pathname.length - 1 ) {
+         dirname = pathname;
+         filename = null;
+      } else {
+         dirname = path.dirname( pathname );
+         filename = path.basename( url.pathname );
+      }
+
       // JSON return object
       var json = {};
 
@@ -114,6 +128,23 @@ http.createServer(function(req, res) {
         , fields = {};
 
       form
+         // error
+         .on('error', function(err) {
+            json.error = err;
+            res.end(JSON.stringify(json));
+         })
+
+         // set the file path
+         .on('fileBegin', function(name, file) {
+            var dirpath = path.join( uploadsPath, dirname );
+            
+            // create dir path if it doesn't already exist
+            moreFs.mkdirSync( dirpath, null, true /* recursive */ );
+            
+            // if request path doesnt contain file name, use name of the uploaded file
+            file.path = path.join( dirpath, filename || file.name );
+         })
+
          // progress
          .on('progress', function(bytesReceived, bytesExpected) {
             var percent = ((bytesReceived/bytesExpected)*100).toFixed(2);
@@ -124,7 +155,7 @@ http.createServer(function(req, res) {
          .on('file', function(field, file) {
 
             // Check file for allowed/whitelisted files
-            var mimeType = mime.lookup(file.filename);
+            var mimeType = mime.lookup(file.name);
             if (typeof(mimeTypeWhitelist) !== 'undefined' && mimeTypeWhitelist.length > 0) {
                // actually use the whitelist
                if(mimeTypeWhitelist.indexOf(mimeType) == -1) {
@@ -135,30 +166,20 @@ http.createServer(function(req, res) {
             }
 
             // add file to files list
-            var fileInfo = {};
-            fileInfo.path = uploadsPath + file.name;
-            fileInfo.uploadsPath = uploadsPath;
-            fileInfo.filename = file.filename;
-            fileInfo.size = file.size;
-            fileInfo.lastModifiedDate = file.lastModifiedDate;
-            fileInfo.mimeType = mimeType;
+            var fileInfo = {
+               name: file.name,
+               size: file.size,
+               lastModifiedDate: file.lastModifiedDate,
+               mimeType: mimeType
+            };
 
             files.push(fileInfo);
-
-            //rename the incoming file
-            fs.renameSync(file.path, fileInfo.path);
          })
 
          // fields, other query params
          .on('field', function(name, value) {
             fields[name] = value;
          }) 
-
-         // error
-         .on('error', function(err) {
-            json.error = err;
-            res.end(JSON.stringify(json));
-         })
 
          // end of request
          .on('end', function() {
