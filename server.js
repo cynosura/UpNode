@@ -12,13 +12,14 @@ var http = require('http')
   , url = require('url')
   , path = require('path')
   , fs = require('fs')
+  , moreFs = require( './lib/fs' )
   , mime = require('mime')
   , Formidable = require('formidable');
 
 // Configuration options
 var uploadsPath = __dirname + '/uploads/'
   , port = process.argv[2] || 8888
-  , mimeTypeWhitelist = ["image/png"]; 
+  , mimeTypeWhitelist = ['image/png', 'application/zip', 'application/octet-stream']; 
 
 // server setup
 http.createServer(function(req, res) {
