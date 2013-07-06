@@ -41,9 +41,9 @@ http.createServer(function(req, res) {
    //
    var method = req.method.toLowerCase();
 
-   if (method == 'get') {
+   if (method === 'get') {
       serveFile(req, res);
-   } else if (method == 'post') {
+   } else if (method === 'post') {
       saveFile(req, res);
    }
 
@@ -57,9 +57,6 @@ http.createServer(function(req, res) {
       var uri = url.parse(req.url).pathname
         , filename = path.join(uploadsPath, uri);
   
-      // root page
-      if (uri == '/') filename += 'index.html';
-
       fs.exists(filename, function(exists) {
 
          // check if file exists
@@ -69,26 +66,28 @@ http.createServer(function(req, res) {
             return;
          }
 
-         // file is directory
-         if (fs.statSync(filename).isDirectory()) filename += 'index.html';
+         if (fs.statSync(filename).isDirectory()) {
+            // file is directory, output directory listing as json
+            res.writeHead(404, {'Content-Type': 'application/json'});
+            res.end(JSON.stringify(fs.readdirSync(filename)));
+         } else {
+           // serve file
+           fs.readFile(filename, 'binary', function(err, file) {
+              if(err) {
+                 res.writeHead(500, {'Content-Type': 'text/plain'});
+                 res.end(err);
+                 return;
+              }
 
-         // serve file
-         fs.readFile(filename, 'binary', function(err, file) {
-            if(err) {
-               res.writeHead(500, {'Content-Type': 'text/plain'});
-               res.end(err);
-               return;
-            }
+              // lookup correct mime type
+              var mimeType = mime.lookup(filename);
 
-            // lookup correct mime type
-            var mimeType = mime.lookup(filename);
-
-            res.writeHead(200, {'Content-Type': mimeType});
-            res.end(file, 'binary');
-         });
-         
+              res.writeHead(200, {'Content-Type': mimeType});
+              res.end(file, 'binary');
+           });
+         }
       });
-   } 
+   }
 
    // --------------------
 
@@ -144,12 +143,13 @@ http.createServer(function(req, res) {
             
             // if request path doesnt contain file name, use name of the uploaded file
             file.path = path.join( dirpath, filename || file.name );
+            process.stdout.write('File: ' + file.path + '\n');
          })
 
          // progress
          .on('progress', function(bytesReceived, bytesExpected) {
             var percent = ((bytesReceived/bytesExpected)*100).toFixed(2);
-            process.stdout.write('\r\033[2K' + 'Uploading: ' + percent + '%');
+            process.stdout.write('\033[2K' + 'Uploading: ' + percent + '%');
          })
 
          // incoming file
@@ -169,11 +169,11 @@ http.createServer(function(req, res) {
 
             // add file to files list
             var fileInfo = {
-               name: file.name,
-               size: file.size,
-               pathname: path.relative( uploadsPath, file.path ),
-               lastModifiedDate: file.lastModifiedDate,
-               mimeType: mimeType
+              name:             file.name,
+              size:             file.size,
+              pathname:         path.relative( uploadsPath, file.path ),
+              lastModifiedDate: file.lastModifiedDate,
+              mimeType:         mimeType
             };
 
             files.push(fileInfo);
