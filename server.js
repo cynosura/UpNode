@@ -16,6 +16,7 @@ var http = require('http')
   , moreFs = require( './lib/fs' )
   , mime = require('mime')
   , Formidable = require('formidable')
+  , progressBar = require('./lib/progressBar.js')
   , config = require('./server-config.json');
 
 // Configuration options
@@ -124,6 +125,7 @@ http.createServer(function(req, res) {
     // parse file upload
     var form = new Formidable.IncomingForm()
       , files = []
+      , pBar = null
       , fields = {};
 
     form
@@ -142,13 +144,15 @@ http.createServer(function(req, res) {
         
         // if request path doesnt contain file name, use name of the uploaded file
         file.path = path.join( dirpath, filename || file.name );
-        process.stdout.write('File: ' + file.path + '\n');
+
+        // progress or the upload
+        pBar = progressBar.create(process.stdout);
       })
 
       // progress
       .on('progress', function(bytesReceived, bytesExpected) {
-        var percent = ((bytesReceived/bytesExpected)*100).toFixed(2);
-        process.stdout.write('\033[2K' + 'Uploading: ' + percent + '%');
+        var percent = bytesReceived / bytesExpected;
+        pBar && pBar.update(percent);
       })
 
       // incoming file
@@ -191,8 +195,10 @@ http.createServer(function(req, res) {
         json.numberOfFiles = files.length;
         res.end(JSON.stringify(json));
 
-        process.stdout.write('\r\033[2K' + 'Uploading: [DONE]\n');
-
+        pBar && pBar.update(1.0);
+        process.stdout.write(files.reduce(function(prev, f, n){
+          return prev + ' ' + n + ': ' + f.pathname + '\r';
+        }, '\r') + '\r');
       });
     form.parse(req);
   }
