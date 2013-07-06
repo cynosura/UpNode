@@ -55,7 +55,7 @@ http.createServer(function(req, res) {
    //
    function serveFile(req, res) {
       var uri = url.parse(req.url).pathname
-        , filename = path.join(process.cwd(), uri);
+        , filename = path.join(uploadsPath, uri);
   
       // root page
       if (uri == '/') filename += 'index.html';
