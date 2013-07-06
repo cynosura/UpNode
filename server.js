@@ -1,8 +1,9 @@
 //
 // UpNode 
 //
-// v0.0.1
-// Author: Alexander Schuch 
+// v0.0.2
+// Authors: Alexander Schuch 
+//          Raymond Glover 
 //
 // http://github.com/aschuch
 // http://schuch.me
