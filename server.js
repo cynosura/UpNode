@@ -171,7 +171,7 @@ http.createServer(function(req, res) {
             var fileInfo = {
                name: file.name,
                size: file.size,
-               pathname: file.
+               pathname: path.relative( uploadsPath, file.path ),
                lastModifiedDate: file.lastModifiedDate,
                mimeType: mimeType
             };
